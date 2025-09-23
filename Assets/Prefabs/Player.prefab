@@ -95,6 +95,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2684082589246674198}
+  - component: {fileID: 5167341056954815579}
   m_Layer: 6
   m_Name: PlayerVisual
   m_TagString: Untagged
@@ -119,6 +120,39 @@ Transform:
   - {fileID: 7264074194018041503}
   m_Father: {fileID: 7687216302123968202}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5167341056954815579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1087168155576811425}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _componentIndexCache: 255
+  _addedNetworkObject: {fileID: -5649176016224332466}
+  _networkObjectCache: {fileID: 0}
+  _initializationSettings:
+    TargetTransform: {fileID: 7687216302123968202}
+    DetachOnStart: 0
+    AttachOnStop: 0
+  _controllerMovementSettings:
+    EnableTeleport: 0
+    TeleportThreshold: 0
+    AdaptiveInterpolationValue: 0
+    InterpolationValue: 2
+    SmoothedProperties: 4294967295
+    SnapNonSmoothedProperties: 0
+  _spectatorMovementSettings:
+    EnableTeleport: 0
+    TeleportThreshold: 0
+    AdaptiveInterpolationValue: 0
+    InterpolationValue: 2
+    SmoothedProperties: 4294967295
+    SnapNonSmoothedProperties: 0
 --- !u!1 &5382371287461782833
 GameObject:
   m_ObjectHideFlags: 0
@@ -132,7 +166,6 @@ GameObject:
   - component: {fileID: 2715380081519805189}
   - component: {fileID: 3571098912566864220}
   - component: {fileID: -5649176016224332466}
-  - component: {fileID: -6745855431313717760}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -254,7 +287,7 @@ MonoBehaviour:
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
   - {fileID: 2715380081519805189}
-  - {fileID: -6745855431313717760}
+  - {fileID: 0}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}
@@ -266,7 +299,7 @@ MonoBehaviour:
   _preventDespawnOnDisconnect: 0
   _defaultDespawnType: 0
   NetworkObserver: {fileID: 0}
-  _enablePrediction: 0
+  _enablePrediction: 1
   _predictionType: 0
   _graphicalObject: {fileID: 0}
   _detachGraphicalObject: 0
@@ -288,21 +321,6 @@ MonoBehaviour:
     Rotation: {x: 0, y: 0, z: 0, w: 1}
     Scale: {x: 1, y: 1, z: 1}
     IsValid: 1
---- !u!114 &-6745855431313717760
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5382371287461782833}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a6a39c46bf52104ba8efe3100bce3f7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _componentIndexCache: 1
-  _addedNetworkObject: {fileID: -5649176016224332466}
-  _networkObjectCache: {fileID: -5649176016224332466}
 --- !u!1 &7159870517789719344
 GameObject:
   m_ObjectHideFlags: 0

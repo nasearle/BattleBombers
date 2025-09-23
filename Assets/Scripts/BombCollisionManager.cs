@@ -35,11 +35,12 @@ public class BombCollisionManager : MonoBehaviour {
         // Ensure consistent ordering to avoid duplicates
         int idA = bombA.GetInstanceID();
         int idB = bombB.GetInstanceID();
-        
-        if (idA < idB)
+
+        if (idA < idB) {
             return $"{idA}_{idB}";
-        else
+        } else {
             return $"{idB}_{idA}";
+        }
     }
 
     private void FixedUpdate() {
@@ -51,10 +52,7 @@ public class BombCollisionManager : MonoBehaviour {
         if (_currentFrameCollisions.Count == 0)
             return;
 
-        // Process movement transfers first
         ProcessMovementTransfers();
-        
-        // Then apply separation to stationary bombs
         ApplySeparation();
     }
 
@@ -95,9 +93,8 @@ public class BombCollisionManager : MonoBehaviour {
 
     private void ApplySeparationForce(Bomb bombA, Bomb bombB) {
         Vector3 direction = (bombA.transform.position - bombB.transform.position).normalized;
-        float separationDistance = 0.1f; // Adjust as needed
+        float separationDistance = 0.1f;
         
-        // Apply separation
         bombA.transform.position += direction * separationDistance;
         bombB.transform.position -= direction * separationDistance;
     }

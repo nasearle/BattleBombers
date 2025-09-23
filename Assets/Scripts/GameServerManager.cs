@@ -1,7 +1,9 @@
 using System;
 using FishNet;
 using FishNet.Managing;
+using Unity.Multiplayer.Playmode;
 using UnityEngine;
+
 
 public class GameServerManager : MonoBehaviour {
     private NetworkManager _networkManager;
@@ -11,8 +13,16 @@ public class GameServerManager : MonoBehaviour {
     }
 
     private void Start() {
-        StartServer();
-        StartClient();
+#if UNITY_EDITOR
+        if (CurrentPlayer.ReadOnlyTags()[0] == "host") {
+            StartServer();
+            StartClient();
+        } else if (CurrentPlayer.ReadOnlyTags()[0] == "server") {
+            StartServer();
+        } else if (CurrentPlayer.ReadOnlyTags()[0].Contains("client")) {
+            StartClient();
+        }
+#endif
     }
 
     private void StartServer() {

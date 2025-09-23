@@ -8,15 +8,11 @@ public class Bomb : NetworkBehaviour, IKnockable {
     
     private Vector3 _moveDirection;
     private bool _isMoving;
-    private int _instanceID;
-    private HashSet<int> _processedCollisionsThisFrame = new HashSet<int>();
-
-    private void Start() {
-        _instanceID = GetInstanceID();
-    }
 
     private void FixedUpdate() {
-        _processedCollisionsThisFrame.Clear();
+        if (!IsServerStarted) {
+            return;
+        }
         
         if (_isMoving && _moveDirection != Vector3.zero) {
             transform.position += _moveDirection * (moveSpeed * Time.fixedDeltaTime);
@@ -40,6 +36,10 @@ public class Bomb : NetworkBehaviour, IKnockable {
     }
 
     private void OnTriggerStay(Collider other) {
+        if (!IsServerStarted) {
+            return;
+        }
+        
         if (other.gameObject.TryGetComponent<Bomb>(out Bomb otherBomb)) {
             BombCollisionManager.Instance.RegisterCollision(this, otherBomb);
         }
