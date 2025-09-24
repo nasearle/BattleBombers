@@ -132,9 +132,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 453481867b26f7c43b5bf38802a5f50e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _componentIndexCache: 255
+  _componentIndexCache: 1
   _addedNetworkObject: {fileID: -5649176016224332466}
-  _networkObjectCache: {fileID: 0}
+  _networkObjectCache: {fileID: -5649176016224332466}
   _initializationSettings:
     TargetTransform: {fileID: 7687216302123968202}
     DetachOnStart: 0
@@ -235,8 +235,8 @@ MonoBehaviour:
     m_Bits: 128
   playerCollisionRadius: 0.5
   moveSpeed: 7
-  rotationSpeed: 1080
-  gravity: -40
+  rotationSpeed: 10
+  gravity: -3
 --- !u!114 &3571098912566864220
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287,7 +287,7 @@ MonoBehaviour:
   <PredictedOwner>k__BackingField: {fileID: 0}
   NetworkBehaviours:
   - {fileID: 2715380081519805189}
-  - {fileID: 0}
+  - {fileID: 5167341056954815579}
   InitializedParentNetworkBehaviour: {fileID: 0}
   InitializedNestedNetworkObjects: []
   RuntimeParentNetworkBehaviour: {fileID: 0}

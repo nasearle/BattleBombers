@@ -15,7 +15,8 @@ public class Player : NetworkBehaviour {
     [SerializeField] private float gravity;
 
     private CharacterController _controller;
-    private Vector3 _playerVelocity;
+    private float _playerVerticalDisplacement;
+    
     private bool _isGrounded;
     
     private Vector2 _moveDirection;
@@ -25,6 +26,7 @@ public class Player : NetworkBehaviour {
     
     public struct ReplicateData : IReplicateData {
         public Vector2 InputVector;
+        
         public ReplicateData(Vector2 inputVector) : this() {
             InputVector = inputVector;
         }
@@ -38,10 +40,12 @@ public class Player : NetworkBehaviour {
     public struct ReconcileData : IReconcileData {
         public Vector3 Position;
         public Quaternion Rotation;
+        public float PlayerVerticalDisplacement;
         
-        public ReconcileData(Vector3 position, Quaternion rotation) : this() {
+        public ReconcileData(Vector3 position, Quaternion rotation, float playerVerticalDisplacement) : this() {
             Position = position;
             Rotation = rotation;
+            PlayerVerticalDisplacement = playerVerticalDisplacement;
         }
         
         private uint _tick;
@@ -77,39 +81,42 @@ public class Player : NetworkBehaviour {
     [Replicate]
     private void HandleMovementReplicate(ReplicateData data, ReplicateState state = ReplicateState.Invalid,
         Channel channel = Channel.Unreliable) {
+
         Vector3 moveDir = new Vector3(data.InputVector.x, 0, data.InputVector.y);
         
         _isGrounded = _controller.isGrounded;
+        
+        // Apply Gravity
+        _playerVerticalDisplacement += gravity * (float)TimeManager.TickDelta;
 
-        // Reset vertical velocity if grounded and not falling
-        if (_isGrounded && _playerVelocity.y < 0) {
-            _playerVelocity.y = -0.5f;
+        // Reset vertical displacement if grounded and not falling. A small negative number keeps the player touching
+        // the floor so the isGrounded check is consistent.
+        if (_isGrounded &&  _playerVerticalDisplacement < 0f) {
+            _playerVerticalDisplacement = -0.1f;
         }
 
+        Vector3 gravitationalMovement = new Vector3(0, _playerVerticalDisplacement, 0);
+
+        Vector3 horizontalMovement = new Vector3();
         if (moveDir != Vector3.zero) {
             _lastMoveDirection = moveDir;
-            Quaternion targetRotation = Quaternion.LookRotation(moveDir);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * (float)TimeManager.TickDelta);
-            // transform.rotation = targetRotation;
-            _controller.Move(moveDir * (moveSpeed * (float)TimeManager.TickDelta));
+            transform.forward = Vector3.Slerp(transform.forward, moveDir, rotationSpeed * (float)TimeManager.TickDelta);
+            horizontalMovement = moveDir * (moveSpeed * (float)TimeManager.TickDelta);
         }
-
-        // Apply Gravity
-        _playerVelocity.y += gravity * (float)TimeManager.TickDelta;
-        _controller.Move(_playerVelocity * (float)TimeManager.TickDelta);
+        
+        _controller.Move(horizontalMovement + gravitationalMovement);
     }
     
     public override void CreateReconcile() {
-        if (TimeManager.LocalTick % 3 == 0) {
-            transform.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
-            ReconcileData data = new ReconcileData(position, rotation);
-            ReconcileState(data);
-        }
+        transform.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
+        ReconcileData data = new ReconcileData(position, rotation, _playerVerticalDisplacement);
+        ReconcileState(data);
     }
     
     [Reconcile]
     private void ReconcileState(ReconcileData data, Channel channel = Channel.Unreliable) {
         transform.SetPositionAndRotation(data.Position, data.Rotation);
+        _playerVerticalDisplacement = data.PlayerVerticalDisplacement;
     }
 
     private IKnockable GetBombTouchingPlayer() {
