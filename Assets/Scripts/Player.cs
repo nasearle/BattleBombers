@@ -119,11 +119,11 @@ public class Player : NetworkBehaviour {
         _playerVerticalDisplacement = data.PlayerVerticalDisplacement;
     }
 
-    private IKnockable GetBombTouchingPlayer() {
+    private Bomb GetBombTouchingPlayer() {
         Collider[] hitColliders = Physics.OverlapSphere(transform.position - _playerBottomVerticalOffset, playerCollisionRadius, bombLayerMask);
         foreach (Collider hitCollider in hitColliders) {
-            if (hitCollider.TryGetComponent(out IKnockable knockableObject)) {
-                return knockableObject;
+            if (hitCollider.TryGetComponent(out Bomb bomb)) {
+                return bomb;
             }
         }
 
@@ -148,11 +148,13 @@ public class Player : NetworkBehaviour {
 
     [ServerRpc(RequireOwnership = false)]
     private void OnDropServerRpc() {
-        IKnockable knockableObject = GetBombTouchingPlayer();
-        if (knockableObject == null) {
+        Bomb bomb = GetBombTouchingPlayer();
+        if (bomb == null) {
             Bomb.SpawnBomb(bombNetworkObject, transform.position - _playerBottomVerticalOffset);
         } else {
-            knockableObject.Knock(_lastMoveDirection);
+            if (!bomb.IsMoving()) {
+                bomb.Knock(_lastMoveDirection);
+            }
         }
     }
 

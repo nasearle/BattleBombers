@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class BombCollisionManager : MonoBehaviour {
     public static BombCollisionManager Instance { get; private set; }
+    
+    [SerializeField] private LayerMask environmentLayerMask;
 
     private struct CollisionPair {
         public Bomb bombA;
@@ -53,7 +55,7 @@ public class BombCollisionManager : MonoBehaviour {
             return;
 
         ProcessMovementTransfers();
-        ApplySeparation();
+        // ApplySeparation();
     }
 
     private void ProcessMovementTransfers() {
@@ -81,7 +83,7 @@ public class BombCollisionManager : MonoBehaviour {
         }
         // If neither moving, do nothing (separation will handle it)
     }
-
+    
     private void ApplySeparation() {
         foreach (var pair in _currentFrameCollisions) {
             // Only separate if both bombs are stationary
@@ -94,9 +96,14 @@ public class BombCollisionManager : MonoBehaviour {
     private void ApplySeparationForce(Bomb bombA, Bomb bombB) {
         Vector3 direction = (bombA.transform.position - bombB.transform.position).normalized;
         float separationDistance = 0.1f;
-        
-        bombA.transform.position += direction * separationDistance;
-        bombB.transform.position -= direction * separationDistance;
+
+        if (bombA.BombCanMove(direction, separationDistance)) {
+            bombA.transform.position += direction * separationDistance;
+        }
+
+        if (bombB.BombCanMove(-direction, separationDistance)) {
+            bombB.transform.position -= direction * separationDistance;
+        }
     }
 
     private void ClearFrameData() {

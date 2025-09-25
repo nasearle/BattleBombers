@@ -429,7 +429,7 @@ GameObject:
   - component: {fileID: 194230809}
   - component: {fileID: 194230808}
   - component: {fileID: 194230807}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wall_North
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1118,7 +1118,7 @@ GameObject:
   - component: {fileID: 574273314}
   - component: {fileID: 574273313}
   - component: {fileID: 574273312}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wall_West
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2365,7 +2365,7 @@ GameObject:
   - component: {fileID: 1460671776}
   - component: {fileID: 1460671775}
   - component: {fileID: 1460671774}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Wall_East
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2912,6 +2912,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1801ac3854491e142a8aec7a8a699838, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  environmentLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &1579695867
 GameObject:
   m_ObjectHideFlags: 0
@@ -3135,7 +3138,7 @@ GameObject:
   - component: {fileID: 1658434100}
   - component: {fileID: 1658434099}
   - component: {fileID: 1658434098}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Ramp
   m_TagString: Untagged
   m_Icon: {fileID: 0}

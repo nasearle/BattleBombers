@@ -14,12 +14,12 @@ public class GameServerManager : MonoBehaviour {
 
     private void Start() {
 #if UNITY_EDITOR
-        if (CurrentPlayer.ReadOnlyTags()[0] == "host") {
-            StartServer();
-            StartClient();
-        } else if (CurrentPlayer.ReadOnlyTags()[0] == "server") {
+        if (CurrentPlayer.ReadOnlyTags()[0] == "server") {
             StartServer();
         } else if (CurrentPlayer.ReadOnlyTags()[0].Contains("client")) {
+            StartClient();
+        } else {
+            StartServer();
             StartClient();
         }
 #endif

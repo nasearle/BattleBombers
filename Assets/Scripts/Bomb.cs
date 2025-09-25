@@ -5,9 +5,16 @@ using UnityEngine;
 
 public class Bomb : NetworkBehaviour, IKnockable {
     [SerializeField] private float moveSpeed;
+    [SerializeField] private LayerMask environmentLayerMask;
+    [SerializeField] private LayerMask bombLayerMask;
     
     private Vector3 _moveDirection;
     private bool _isMoving;
+    private float _sphereColliderRadius;
+
+    private void Awake() {
+        _sphereColliderRadius = GetComponent<SphereCollider>().radius;
+    }
 
     private void FixedUpdate() {
         if (!IsServerStarted) {
@@ -15,7 +22,15 @@ public class Bomb : NetworkBehaviour, IKnockable {
         }
         
         if (_isMoving && _moveDirection != Vector3.zero) {
-            transform.position += _moveDirection * (moveSpeed * Time.fixedDeltaTime);
+            HandleBombCollisions();
+            
+            HandleEnvironmentCollisions();
+            
+            if (_moveDirection != Vector3.zero) {
+                transform.position += _moveDirection * (moveSpeed * Time.fixedDeltaTime);
+            } else {
+                _isMoving = false;
+            }
         } else {
             _isMoving = false;
         }
@@ -26,7 +41,8 @@ public class Bomb : NetworkBehaviour, IKnockable {
     }
 
     public void Knock(Vector3 direction) {
-        _moveDirection = direction;
+        _moveDirection += direction;
+        _moveDirection.Normalize();
         _isMoving = true;
     }
 
@@ -35,14 +51,55 @@ public class Bomb : NetworkBehaviour, IKnockable {
         _isMoving = false;
     }
 
-    private void OnTriggerStay(Collider other) {
-        if (!IsServerStarted) {
-            return;
+    private void HandleBombCollisions() {
+        Vector3 targetPosition = transform.position + _moveDirection * (moveSpeed * Time.fixedDeltaTime);
+    
+        Collider[] hitColliders = Physics.OverlapSphere(targetPosition, _sphereColliderRadius, bombLayerMask);
+        
+        foreach (Collider hitCollider in hitColliders) {
+            if (hitCollider.TryGetComponent(out Bomb otherBomb) && otherBomb != this) {
+                if (!otherBomb.IsMoving()) {
+                    otherBomb.Knock(_moveDirection);
+                    Stop();
+                } else {
+                    otherBomb.Knock(_moveDirection);
+                }
+            }
+        }
+    }
+    
+    private void HandleEnvironmentCollisions() {
+        float sphereCastDistance = moveSpeed * Time.fixedDeltaTime;
+        
+        // Check X-axis movement
+        if (Mathf.Abs(_moveDirection.x) > 0.01f) {
+            Vector3 xDirection = new Vector3(_moveDirection.x, 0, 0).normalized;
+            if (!BombCanMove(xDirection, sphereCastDistance)) {
+                _moveDirection.x = 0;
+            }
         }
         
-        if (other.gameObject.TryGetComponent<Bomb>(out Bomb otherBomb)) {
-            BombCollisionManager.Instance.RegisterCollision(this, otherBomb);
+        // Check Z-axis movement
+        if (Mathf.Abs(_moveDirection.z) > 0.01f) {
+            Vector3 zDirection = new Vector3(0, 0, _moveDirection.z).normalized;
+            if (!BombCanMove(zDirection, sphereCastDistance)) {
+                _moveDirection.z = 0;
+            }
         }
+    }
+    
+    public bool BombCanMove(Vector3 direction, float sphereCastDistance) {
+        Vector3 origin = transform.position;
+        Vector3 castDirection = direction.normalized;
+        
+        return !Physics.SphereCast(
+            origin,
+            _sphereColliderRadius,
+            castDirection,
+            out RaycastHit hit,
+            sphereCastDistance,
+            environmentLayerMask
+        );
     }
 
     public bool IsMoving() {
@@ -51,5 +108,9 @@ public class Bomb : NetworkBehaviour, IKnockable {
 
     public Vector3 GetMoveDirection() {
         return _moveDirection;
+    }
+
+    public float GetMoveSpeed() {
+        return moveSpeed;
     }
 }

@@ -234,6 +234,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   playerCollisionRadius: 0.5
+  bombSphereCollider: {fileID: 2645578579914955315, guid: 8e770b214fef95e4b9dc73f8c844b829, type: 3}
   moveSpeed: 7
   rotationSpeed: 10
   gravity: -3
