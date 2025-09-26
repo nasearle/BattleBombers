@@ -53,18 +53,64 @@ public class Bomb : NetworkBehaviour, IKnockable {
 
     private void HandleBombCollisions() {
         Vector3 targetPosition = transform.position + _moveDirection * (moveSpeed * Time.fixedDeltaTime);
-    
         Collider[] hitColliders = Physics.OverlapSphere(targetPosition, _sphereColliderRadius, bombLayerMask);
+        
+        Vector3 closestTouchPosition = Vector3.zero;
+        float closestDistance = float.MaxValue;
+        bool foundCollision = false;
         
         foreach (Collider hitCollider in hitColliders) {
             if (hitCollider.TryGetComponent(out Bomb otherBomb) && otherBomb != this) {
                 if (!otherBomb.IsMoving()) {
-                    otherBomb.Knock(_moveDirection);
-                    Stop();
+                    Vector3 lineStart = transform.position;
+                    Vector3 lineDirection = _moveDirection.normalized;
+                    float movingSphereRadius = _sphereColliderRadius;
+                    
+                    Vector3 stationarySphereCenter = otherBomb.transform.position;
+                    float stationarySphereRadius = otherBomb.GetComponent<SphereCollider>().radius;
+                    
+                    // Vector from line start to stationary sphere center
+                    Vector3 toStationary = stationarySphereCenter - lineStart;
+
+                    // Project onto the line direction
+                    float projectionLength = Vector3.Dot(toStationary, lineDirection);
+
+                    // Distance from line to stationary sphere center
+                    Vector3 closestPointOnLine = lineStart + lineDirection * projectionLength;
+                    float distanceToLine = Vector3.Distance(stationarySphereCenter, closestPointOnLine);
+
+                    // Combined radius for touching
+                    float combinedRadius = movingSphereRadius + stationarySphereRadius;
+
+                    // Check if the line gets close enough for spheres to touch
+                    if (distanceToLine <= combinedRadius) {
+                        // Calculate where the moving sphere first touches the stationary sphere
+                        float halfChord = Mathf.Sqrt(combinedRadius * combinedRadius - distanceToLine * distanceToLine);
+                        float t = projectionLength - halfChord;
+    
+                        if (t > 0) {
+                            Vector3 touchPosition = lineStart + lineDirection * t;
+                            float distanceToTouch = Vector3.Distance(transform.position, touchPosition);
+                            
+                            // Keep track of the closest touch position
+                            if (distanceToTouch < closestDistance) {
+                                closestDistance = distanceToTouch;
+                                closestTouchPosition = touchPosition;
+                                foundCollision = true;
+                            }
+                        }
+                        otherBomb.Knock(_moveDirection);
+                    }
                 } else {
                     otherBomb.Knock(_moveDirection);
                 }
             }
+        }
+        
+        // Move to the closest touch position and stop
+        if (foundCollision) {
+            transform.position = closestTouchPosition;
+            Stop();
         }
     }
     
