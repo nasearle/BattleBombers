@@ -171,12 +171,17 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 1961552950979316260}
   _networkObjectCache: {fileID: 1961552950979316260}
   moveSpeed: 10
+  gravity: 3
   environmentLayerMask:
     serializedVersion: 2
     m_Bits: 256
   bombLayerMask:
     serializedVersion: 2
     m_Bits: 128
+  floorLayerMask:
+    serializedVersion: 2
+    m_Bits: 512
+  testFloorColliderCastDistance: 0.1
 --- !u!114 &1961552950979316260
 MonoBehaviour:
   m_ObjectHideFlags: 0

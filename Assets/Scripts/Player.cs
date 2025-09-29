@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 public class Player : NetworkBehaviour {
     [SerializeField] private NetworkObject bombNetworkObject;
     [SerializeField] private LayerMask bombLayerMask;
+    [SerializeField] private Transform dropBombSpawnTransform;
     [SerializeField] private float playerCollisionRadius;
     
     [SerializeField] private float moveSpeed;
@@ -21,8 +22,6 @@ public class Player : NetworkBehaviour {
     
     private Vector2 _moveDirection;
     private Vector3 _lastMoveDirection;
-
-    private Vector3 _playerBottomVerticalOffset = new Vector3(0, 0.5f, 0);
     
     public struct ReplicateData : IReplicateData {
         public Vector2 InputVector;
@@ -87,7 +86,7 @@ public class Player : NetworkBehaviour {
         _isGrounded = _controller.isGrounded;
         
         // Apply Gravity
-        _playerVerticalDisplacement += gravity * (float)TimeManager.TickDelta;
+        _playerVerticalDisplacement -= gravity * (float)TimeManager.TickDelta;
 
         // Reset vertical displacement if grounded and not falling. A small negative number keeps the player touching
         // the floor so the isGrounded check is consistent.
@@ -120,7 +119,7 @@ public class Player : NetworkBehaviour {
     }
 
     private Bomb GetBombTouchingPlayer() {
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position - _playerBottomVerticalOffset, playerCollisionRadius, bombLayerMask);
+        Collider[] hitColliders = Physics.OverlapSphere(dropBombSpawnTransform.position, playerCollisionRadius, bombLayerMask);
         foreach (Collider hitCollider in hitColliders) {
             if (hitCollider.TryGetComponent(out Bomb bomb)) {
                 return bomb;
@@ -150,7 +149,7 @@ public class Player : NetworkBehaviour {
     private void OnDropServerRpc() {
         Bomb bomb = GetBombTouchingPlayer();
         if (bomb == null) {
-            Bomb.SpawnBomb(bombNetworkObject, transform.position - _playerBottomVerticalOffset);
+            Bomb.SpawnBomb(bombNetworkObject, dropBombSpawnTransform.position);
         } else {
             if (!bomb.IsMoving()) {
                 bomb.Knock(_lastMoveDirection);
@@ -170,7 +169,7 @@ public class Player : NetworkBehaviour {
         Gizmos.color = Color.red; 
 
         // Draw a wireframe sphere using the same center and radius
-        Gizmos.DrawWireSphere(transform.position - _playerBottomVerticalOffset, playerCollisionRadius);
+        Gizmos.DrawWireSphere(dropBombSpawnTransform.position, playerCollisionRadius);
     }
 
     private void OnTriggerEnter(Collider other) {

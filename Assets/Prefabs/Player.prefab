@@ -187,6 +187,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2684082589246674198}
+  - {fileID: 6411812991256688873}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &6766987508653363112
@@ -233,11 +234,11 @@ MonoBehaviour:
   bombLayerMask:
     serializedVersion: 2
     m_Bits: 128
+  dropBombSpawnTransform: {fileID: 6411812991256688873}
   playerCollisionRadius: 0.5
-  bombSphereCollider: {fileID: 2645578579914955315, guid: 8e770b214fef95e4b9dc73f8c844b829, type: 3}
   moveSpeed: 7
   rotationSpeed: 10
-  gravity: -3
+  gravity: 3
 --- !u!114 &3571098912566864220
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -408,3 +409,34 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7732207175256263233
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6411812991256688873}
+  m_Layer: 6
+  m_Name: DropBombSpawnPosition
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6411812991256688873
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7732207175256263233}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7687216302123968202}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
