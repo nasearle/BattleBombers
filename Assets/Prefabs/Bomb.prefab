@@ -178,9 +178,8 @@ MonoBehaviour:
   bombLayerMask:
     serializedVersion: 2
     m_Bits: 128
-  floorLayerMask:
-    serializedVersion: 2
-    m_Bits: 512
+  skinWidth: 0.05
+  testSphereColliderRadius: 0.5
   testFloorColliderCastDistance: 0.1
 --- !u!114 &1961552950979316260
 MonoBehaviour:
