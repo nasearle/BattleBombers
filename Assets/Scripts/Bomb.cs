@@ -96,8 +96,6 @@ public class Bomb : NetworkBehaviour, IKnockable {
             if (hits.Length == 0) {
                 return remainingMove;
             }
-            
-            Debug.Log("hits.Length: " + hits.Length);
 
             RaycastHit[] hitsOrderedByDistance = hits.OrderBy(hit => hit.distance).ToArray();
             RaycastHit closestHit = hitsOrderedByDistance.First();
@@ -109,7 +107,6 @@ public class Bomb : NetworkBehaviour, IKnockable {
             // overlaps with other objects.
             Vector3 skinWidthAdjustment = Vector3.zero;
             if (closestHit.distance > skinWidth) {
-                Debug.Log("closest hit within skin width");
                 skinWidthAdjustment = direction * skinWidth;
                 Vector3 adjustedPosition = bombPositionAtHit - skinWidthAdjustment;
                 transform.position = adjustedPosition;
