@@ -239,6 +239,12 @@ MonoBehaviour:
   moveSpeed: 7
   rotationSpeed: 10
   gravity: 3
+  knockbackForce: 7
+  knockbackUpwardForce: 0.5
+  knockbackDuration: 0.5
+  bombIgnoreCollisionDuration: 0.3
+  bodyRenderer: {fileID: 4097100578805961124}
+  redMaterial: {fileID: 2100000, guid: ab9f0970a5baa434faa21312aa41d482, type: 2}
 --- !u!114 &3571098912566864220
 MonoBehaviour:
   m_ObjectHideFlags: 0

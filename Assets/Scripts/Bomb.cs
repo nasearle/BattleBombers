@@ -8,7 +8,6 @@ public class Bomb : NetworkBehaviour, IKnockable {
     [SerializeField] private float moveSpeed;
     [SerializeField] private float gravity;
     [SerializeField] private LayerMask environmentLayerMask;
-    [SerializeField] private LayerMask bombLayerMask;
     [SerializeField] private LayerMask collisionLayerMask;
     [SerializeField] private float skinWidth;
     
@@ -22,6 +21,9 @@ public class Bomb : NetworkBehaviour, IKnockable {
     private bool _isGrounded;
     private Collider _sphereCollider;
     private float _sphereColliderRadius;
+    
+    private Player _ignoredPlayer;
+    private float _ignorePlayerTimer;
 
     private void Awake() {
         _sphereCollider = GetComponent<SphereCollider>();
@@ -31,6 +33,13 @@ public class Bomb : NetworkBehaviour, IKnockable {
     private void FixedUpdate() {
         if (!IsServerStarted) {
             return;
+        }
+        
+        if (_ignorePlayerTimer > 0f) {
+            _ignorePlayerTimer -= Time.fixedDeltaTime;
+            if (_ignorePlayerTimer <= 0f) {
+                _ignoredPlayer = null;
+            }
         }
 
         Vector3 totalMovement = Vector3.zero;
@@ -92,6 +101,11 @@ public class Bomb : NetworkBehaviour, IKnockable {
 
             // Filter out hits with the bomb's own collider
             hits = hits.Where(hit => hit.collider != _sphereCollider).ToArray();
+            
+            if (_ignoredPlayer != null) {
+                Collider ignoredCollider = _ignoredPlayer.GetCharacterController();
+                hits = hits.Where(hit => hit.collider != ignoredCollider).ToArray();
+            }
 
             if (hits.Length == 0) {
                 return remainingMove;
@@ -175,29 +189,13 @@ public class Bomb : NetworkBehaviour, IKnockable {
             Debug.DrawLine(transform.position, sphereCastMidpoint, Color.red);
         }
     }
-    
-    public bool BombCanMove(Vector3 direction, float sphereCastDistance) {
-        Vector3 castDirection = direction.normalized;
-        
-        Collider[] touchingWall = Physics.OverlapSphere(
-            transform.position + castDirection * sphereCastDistance,
-            _sphereColliderRadius,
-            environmentLayerMask
-        );
-        
-        return !(touchingWall.Length > 0);
-    }
 
     public bool IsMoving() {
         return _isMovingHorizontally;
     }
-
-    // TODO: remove this
-    public Vector3 GetMoveDirection() {
-        return _horizontalDirection;
-    }
-
-    public float GetMoveSpeed() {
-        return moveSpeed;
+    
+    public void SetIgnoredPlayer(Player player, float duration) {
+        _ignoredPlayer = player;
+        _ignorePlayerTimer = duration;
     }
 }

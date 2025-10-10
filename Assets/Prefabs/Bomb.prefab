@@ -180,9 +180,8 @@ MonoBehaviour:
     m_Bits: 128
   collisionLayerMask:
     serializedVersion: 2
-    m_Bits: 384
+    m_Bits: 448
   skinWidth: 0.05
-  sphereCollider: {fileID: 2645578579914955315}
   testSphereColliderRadius: 0.5
   testFloorColliderCastDistance: 0.1
 --- !u!114 &1961552950979316260
