@@ -87,7 +87,6 @@ public class Player : NetworkBehaviour, IKnockable {
     }
     
     public override void OnStartNetwork() {
-        base.OnStartNetwork();
         _controller = GetComponent<CharacterController>();
         _playerCollider = _controller;
         
@@ -96,6 +95,8 @@ public class Player : NetworkBehaviour, IKnockable {
         }
         
         TimeManager.OnTick += TimeManager_OnTick;
+        
+        NetworkManager.CacheObjects(bombNetworkObject, 10, true);
     }
 
     public override void OnStopNetwork() {
@@ -205,7 +206,7 @@ public class Player : NetworkBehaviour, IKnockable {
     private void OnDropServerRpc() {
         Bomb bomb = GetBombTouchingPlayer();
         if (bomb == null) {
-            Bomb.SpawnBomb(bombNetworkObject, dropBombSpawnTransform.position);
+            Bomb.SpawnBomb(bombNetworkObject, dropBombSpawnTransform);
         } else {
             if (!bomb.IsMoving()) {
                 bomb.SetIgnoredPlayer(this, bombIgnoreCollisionDuration);

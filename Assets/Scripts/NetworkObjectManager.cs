@@ -8,22 +8,24 @@ public class NetworkObjectManager : NetworkBehaviour {
           Instance = this;
      }
      
-     public void SpawnBomb(NetworkObject networkObject, Vector3 position) {
+     public void SpawnBomb(NetworkObject networkObject, Transform bombSpawnTransform) {
           if (IsServerStarted) {
-               SpawnBombLocally(networkObject, position);
+               SpawnBombLocally(networkObject, bombSpawnTransform);
           } else {
-               SpawnBombServerRpc(networkObject, position);
+               SpawnBombServerRpc(networkObject, bombSpawnTransform);
           }
           
      }
 
-     private void SpawnBombLocally(NetworkObject networkObject, Vector3 position) {
-          NetworkObject bomb = Instantiate(networkObject, position, Quaternion.identity);
+     private void SpawnBombLocally(NetworkObject networkObject, Transform bombSpawnTransform) {
+          // NetworkObject bomb = Instantiate(networkObject, position, Quaternion.identity);
+          NetworkObject bomb = NetworkManager.GetPooledInstantiated(networkObject, true);
+          bomb.transform.position = bombSpawnTransform.position;
           ServerManager.Spawn(bomb);
      }
 
      [ServerRpc(RequireOwnership = false)]
-     private void SpawnBombServerRpc(NetworkObject networkObject, Vector3 position) {
-          SpawnBombLocally(networkObject, position);
+     private void SpawnBombServerRpc(NetworkObject networkObject, Transform playerTransform) {
+          SpawnBombLocally(networkObject, playerTransform);
      }
 }

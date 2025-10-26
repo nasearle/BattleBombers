@@ -13,6 +13,10 @@ public class Bomb : NetworkBehaviour, IKnockable {
     
     [SerializeField] private float testSphereColliderRadius = 0.5f;
     [SerializeField] private float testFloorColliderCastDistance = 0.1f;
+
+    [SerializeField] private float detonationTimerMax = 5f;
+    
+    private float _detonationTimer;
     
     private Vector3 _horizontalDirection;
     private Vector3 _verticalVelocity;
@@ -28,6 +32,34 @@ public class Bomb : NetworkBehaviour, IKnockable {
     private void Awake() {
         _sphereCollider = GetComponent<SphereCollider>();
         _sphereColliderRadius = GetComponent<SphereCollider>().radius;
+    }
+    
+    private void Start() {
+        if (!IsServerStarted) {
+            return;
+        }
+
+        _detonationTimer = detonationTimerMax;
+    }
+
+    private void OnEnable() {
+        if (!IsServerStarted) {
+            return;
+        }
+
+        _detonationTimer = detonationTimerMax;
+    }
+
+    private void Update() {
+        if (!IsServerStarted) {
+            return;
+        }
+        
+        _detonationTimer -= Time.deltaTime;
+
+        if (_detonationTimer <= 0f) {
+            DestroySelf();
+        }
     }
 
     private void FixedUpdate() {
@@ -74,8 +106,12 @@ public class Bomb : NetworkBehaviour, IKnockable {
         }
     }
 
-    public static void SpawnBomb(NetworkObject networkObject, Vector3 position) {
-        NetworkObjectManager.Instance.SpawnBomb(networkObject, position);
+    public static void SpawnBomb(NetworkObject networkObject, Transform bombSpawnTransform) {
+        NetworkObjectManager.Instance.SpawnBomb(networkObject, bombSpawnTransform);
+    }
+
+    private void DestroySelf() {
+        Despawn();
     }
 
     public void Knock(Vector3 direction) {
@@ -84,7 +120,7 @@ public class Bomb : NetworkBehaviour, IKnockable {
         _isMovingHorizontally = true;
     }
 
-    public void Stop() {
+    private void Stop() {
         _horizontalDirection = Vector3.zero;
         _isMovingHorizontally = false;
     }
@@ -117,8 +153,9 @@ public class Bomb : NetworkBehaviour, IKnockable {
             Vector3 moveToContact = direction * closestHit.distance;
             Vector3 bombPositionAtHit = transform.position + moveToContact;
             
-            // Only reposition if farther away than skin width. Otherwise, the bomb will be pushed away and this could cause
-            // overlaps with other objects.
+            // Move the bomb a skin's width away from colliding object. Don't move the bomb if it was already within a
+            // skin's width from the object before it moved, otherwise the bomb will be pushed away and this could
+            // cause overlaps with other objects.
             Vector3 skinWidthAdjustment = Vector3.zero;
             if (closestHit.distance > skinWidth) {
                 skinWidthAdjustment = direction * skinWidth;
