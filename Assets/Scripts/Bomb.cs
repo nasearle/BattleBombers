@@ -4,7 +4,10 @@ using System.Linq;
 using FishNet.Object;
 using UnityEngine;
 
-public class Bomb : NetworkBehaviour, IKnockable {
+public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
+    private const string BOMB_LAYER_NAME = "Bomb";
+    private const string NON_COLLIDABLE_LAYER_NAME = "NonCollidable";
+    
     [SerializeField] private float moveSpeed;
     [SerializeField] private float gravity;
     [SerializeField] private LayerMask environmentLayerMask;
@@ -14,40 +17,54 @@ public class Bomb : NetworkBehaviour, IKnockable {
     [SerializeField] private float testSphereColliderRadius = 0.5f;
     [SerializeField] private float testFloorColliderCastDistance = 0.1f;
 
+    [SerializeField] private GameObject bombVisualGameObject;
+
+    [SerializeField] private GameObject explosionGameObject;
     [SerializeField] private float detonationTimerMax = 5f;
     
     private float _detonationTimer;
     
     private Vector3 _horizontalDirection;
     private Vector3 _verticalVelocity;
-    private Vector3 _velocity;
     private bool _isMovingHorizontally;
-    private bool _isGrounded;
     private Collider _sphereCollider;
     private float _sphereColliderRadius;
     
     private Player _ignoredPlayer;
     private float _ignorePlayerTimer;
+    
+    private bool _isExploding;
 
     private void Awake() {
         _sphereCollider = GetComponent<SphereCollider>();
         _sphereColliderRadius = GetComponent<SphereCollider>().radius;
     }
-    
-    private void Start() {
+
+    private void ResetPooledObject() {
         if (!IsServerStarted) {
             return;
         }
-
+        
+        _horizontalDirection = Vector3.zero;
+        _verticalVelocity = Vector3.zero;
+        _isMovingHorizontally = false;
         _detonationTimer = detonationTimerMax;
+        _isExploding = false;
+        
+        _sphereCollider.enabled = true;
+        
+        bombVisualGameObject.SetActive(true);
+        explosionGameObject.SetActive(false);
+        
+        gameObject.layer = LayerMask.NameToLayer(BOMB_LAYER_NAME);
+    }
+    
+    private void Start() {
+        ResetPooledObject();
     }
 
     private void OnEnable() {
-        if (!IsServerStarted) {
-            return;
-        }
-
-        _detonationTimer = detonationTimerMax;
+        ResetPooledObject();
     }
 
     private void Update() {
@@ -57,13 +74,17 @@ public class Bomb : NetworkBehaviour, IKnockable {
         
         _detonationTimer -= Time.deltaTime;
 
-        if (_detonationTimer <= 0f) {
-            DestroySelf();
+        if (_detonationTimer <= 0f && !_isExploding) {
+            Explode();
         }
     }
 
     private void FixedUpdate() {
         if (!IsServerStarted) {
+            return;
+        }
+
+        if (_isExploding) {
             return;
         }
         
@@ -109,9 +130,24 @@ public class Bomb : NetworkBehaviour, IKnockable {
     public static void SpawnBomb(NetworkObject networkObject, Transform bombSpawnTransform) {
         NetworkObjectManager.Instance.SpawnBomb(networkObject, bombSpawnTransform);
     }
+    
+    public void Damage() {
+        if (_isExploding) {
+            return;
+        }
+        
+        Explode();
+    }
 
-    private void DestroySelf() {
-        Despawn();
+    private void Explode() {
+        _isExploding = true;
+        
+        bombVisualGameObject.SetActive(false);
+        _sphereCollider.enabled = false;
+        
+        gameObject.layer = LayerMask.NameToLayer(NON_COLLIDABLE_LAYER_NAME);
+        
+        explosionGameObject.SetActive(true);
     }
 
     public void Knock(Vector3 direction) {

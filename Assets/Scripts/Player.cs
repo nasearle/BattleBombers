@@ -4,7 +4,7 @@ using FishNet.Transporting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : NetworkBehaviour, IKnockable {
+public class Player : NetworkBehaviour, IKnockable, IDamageable {
     [SerializeField] private NetworkObject bombNetworkObject;
     [SerializeField] private LayerMask bombLayerMask;
     [SerializeField] private Transform dropBombSpawnTransform;
@@ -232,6 +232,10 @@ public class Player : NetworkBehaviour, IKnockable {
 
     public void Knock(Vector3 direction) {
         KnockClientRpc(direction);
+    }
+
+    public void Damage() {
+        Debug.Log("Player damaged!");
     }
     
     [ObserversRpc(RunLocally = true)]

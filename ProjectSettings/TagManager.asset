@@ -15,7 +15,7 @@ TagManager:
   - Bomb
   - Environment
   - Floor
-  - 
+  - NonCollidable
   - 
   - 
   - 
