@@ -269,6 +269,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 448
   skinWidth: 0.05
+  bounceVelocity: 20
+  bounceThreshold: -0.2
   testSphereColliderRadius: 0.5
   testFloorColliderCastDistance: 0.1
   bombVisualGameObject: {fileID: 3988285632059144738}

@@ -5,14 +5,19 @@ using FishNet.Object;
 using UnityEngine;
 
 public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
-    private const string BOMB_LAYER_NAME = "Bomb";
-    private const string NON_COLLIDABLE_LAYER_NAME = "NonCollidable";
+    private const string BombLayerName = "Bomb";
+    private const string NonCollidableLayerName = "NonCollidable";
+    private const int MaxCollisionIterations = 5;
+
     
     [SerializeField] private float moveSpeed;
     [SerializeField] private float gravity;
     [SerializeField] private LayerMask environmentLayerMask;
     [SerializeField] private LayerMask collisionLayerMask;
     [SerializeField] private float skinWidth;
+    
+    [SerializeField] private float bounceVelocity;
+    [SerializeField] private float bounceThreshold = -0.2f;
     
     [SerializeField] private float testSphereColliderRadius = 0.5f;
     [SerializeField] private float testFloorColliderCastDistance = 0.1f;
@@ -56,7 +61,7 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
         bombVisualGameObject.SetActive(true);
         explosionGameObject.SetActive(false);
         
-        gameObject.layer = LayerMask.NameToLayer(BOMB_LAYER_NAME);
+        gameObject.layer = LayerMask.NameToLayer(BombLayerName);
     }
     
     private void Start() {
@@ -101,12 +106,12 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
         bool isGrounded = IsGrounded(out groundHit);
     
         if (_isMovingHorizontally && _horizontalDirection != Vector3.zero) {
-            Vector3 horizontalMove = _horizontalDirection * (moveSpeed * Time.fixedDeltaTime);
-
             // Project horizontal move if grounded
             if (isGrounded) {
-                horizontalMove = Vector3.ProjectOnPlane(horizontalMove, groundHit.normal);
+                _horizontalDirection = Vector3.ProjectOnPlane(_horizontalDirection, groundHit.normal).normalized;
             }
+            
+            Vector3 horizontalMove = _horizontalDirection * (moveSpeed * Time.fixedDeltaTime);
 
             totalMovement += horizontalMove;
         } else {
@@ -145,13 +150,13 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
         bombVisualGameObject.SetActive(false);
         _sphereCollider.enabled = false;
         
-        gameObject.layer = LayerMask.NameToLayer(NON_COLLIDABLE_LAYER_NAME);
+        gameObject.layer = LayerMask.NameToLayer(NonCollidableLayerName);
         
         explosionGameObject.SetActive(true);
     }
 
     public void Knock(Vector3 direction) {
-        _horizontalDirection += direction;
+        _horizontalDirection += new Vector3(direction.x, 0, direction.z);
         _horizontalDirection.Normalize();
         _isMovingHorizontally = true;
     }
@@ -164,16 +169,23 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
     private Vector3 HandleCollisions(Vector3 desiredMove) {
         Vector3 remainingMove = desiredMove;
         
-        while (remainingMove.magnitude > 0f) {
+        int iterationCount = 0;
+        while (remainingMove.magnitude > 0f && iterationCount < MaxCollisionIterations) {
+            iterationCount++;
+            
+            // if (iterationCount >= MaxCollisionIterations) {
+            //     Debug.LogWarning("Max collision iterations reached. Remaining move might not be accurate.");
+            // }
+
             Vector3 direction = remainingMove.normalized;
             float distance = remainingMove.magnitude;
-            float castRadius = _sphereColliderRadius;
             
-            RaycastHit[] hits = Physics.SphereCastAll(transform.position, castRadius, direction, distance, collisionLayerMask);
+            RaycastHit[] hits = Physics.SphereCastAll(transform.position, _sphereColliderRadius, direction, distance, collisionLayerMask);
 
             // Filter out hits with the bomb's own collider
             hits = hits.Where(hit => hit.collider != _sphereCollider).ToArray();
             
+            // Filter out the ignored player (player who kicks the bomb is ignored for a bit)
             if (_ignoredPlayer != null) {
                 Collider ignoredCollider = _ignoredPlayer.GetCharacterController();
                 hits = hits.Where(hit => hit.collider != ignoredCollider).ToArray();
@@ -192,36 +204,55 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
             // Move the bomb a skin's width away from colliding object. Don't move the bomb if it was already within a
             // skin's width from the object before it moved, otherwise the bomb will be pushed away and this could
             // cause overlaps with other objects.
-            Vector3 skinWidthAdjustment = Vector3.zero;
-            if (closestHit.distance > skinWidth) {
-                skinWidthAdjustment = direction * skinWidth;
-                Vector3 adjustedPosition = bombPositionAtHit - skinWidthAdjustment;
-                transform.position = adjustedPosition;
-            }
+            AdjustPositionForSkinWidth(bombPositionAtHit, direction, closestHit.distance);
             
             // Might be more accurate to add skinWidth here?
             remainingMove -= moveToContact;
             
-            foreach (RaycastHit hit in hitsOrderedByDistance) {
-                if (((1 << hit.collider.gameObject.layer) & environmentLayerMask) != 0) {
-                    remainingMove = Vector3.ProjectOnPlane(remainingMove, hit.normal);
-
-                    // Split back into horizontal and vertical components
-                    _horizontalDirection = new Vector3(remainingMove.x, 0, remainingMove.z).normalized;
-                    _verticalVelocity = new Vector3(0, remainingMove.y, 0);
-                } 
-                
-                if (hit.collider.TryGetComponent(out IKnockable knockable)) {
-                    knockable.Knock(remainingMove.normalized);
-                    Stop();
-                    remainingMove = Vector3.zero;
-                }
-            }
+            ProcessCollisionHits(hitsOrderedByDistance, ref remainingMove);
         }
         
         return remainingMove;
     }
 
+    private Vector3 ProcessCollisionHits(RaycastHit[] hits, ref Vector3 remainingMove) {
+        foreach (RaycastHit hit in hits) {
+            if (((1 << hit.collider.gameObject.layer) & environmentLayerMask) != 0) {
+                // Object is part of the environment
+                remainingMove = Vector3.ProjectOnPlane(remainingMove, hit.normal);
+
+                // Split back into horizontal and vertical components
+                _horizontalDirection = new Vector3(remainingMove.x, 0, remainingMove.z).normalized;
+                _verticalVelocity = new Vector3(0, remainingMove.y, 0);
+            } else if (hit.collider.TryGetComponent(out IKnockable knockable)) {
+                // Handle collisions with knockable objects
+                HandleKnockableCollision(hit, knockable, ref remainingMove);
+            }
+        }
+        return remainingMove;
+    }
+
+    private void HandleKnockableCollision(RaycastHit hit, IKnockable knockable, ref Vector3 remainingMove) {
+        Vector3 hitPointRelativeToBomb = transform.InverseTransformPoint(hit.point);
+        if (hitPointRelativeToBomb.y <= bounceThreshold) {
+            _verticalVelocity = new Vector3(0, bounceVelocity, 0);
+            Vector3 bounceDirection = new Vector3(remainingMove.x, bounceVelocity, remainingMove.z).normalized;
+            remainingMove = bounceDirection * remainingMove.magnitude;
+        } else {
+            knockable.Knock(remainingMove.normalized);
+            Stop();
+            remainingMove = Vector3.zero;
+        }
+    }
+    
+    private void AdjustPositionForSkinWidth(Vector3 bombPositionAtHit, Vector3 direction, float closestHitDistance) {
+        if (closestHitDistance > skinWidth) {
+            Vector3 skinWidthAdjustment = direction * skinWidth;
+            Vector3 adjustedPosition = bombPositionAtHit - skinWidthAdjustment;
+            transform.position = adjustedPosition;
+        }
+    }
+    
     private bool IsGrounded(out RaycastHit hit) {
         float castDistance = skinWidth + 0.05f;
         if (Physics.SphereCast(
