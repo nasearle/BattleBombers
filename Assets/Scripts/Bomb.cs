@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using FishNet.Object;
 using UnityEngine;
+using MoreMountains.Feedbacks;
 
 public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
     private const string BombLayerName = "Bomb";
     private const string NonCollidableLayerName = "NonCollidable";
     private const int MaxCollisionIterations = 5;
-
     
     [SerializeField] private float moveSpeed;
     [SerializeField] private float gravity;
@@ -26,6 +26,9 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
 
     [SerializeField] private GameObject explosionGameObject;
     [SerializeField] private float detonationTimerMax = 5f;
+    
+    [SerializeField] private MMFeedbacks collisionFeedback;
+    [SerializeField] private MMFeedbacks idleFeedback;
     
     private float _detonationTimer;
     
@@ -70,6 +73,11 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
 
     private void OnEnable() {
         ResetPooledObject();
+        idleFeedback?.PlayFeedbacks();
+    }
+
+    private void OnDisable() {
+        idleFeedback?.StopFeedbacks();
     }
 
     private void Update() {
@@ -242,6 +250,7 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
             knockable.Knock(remainingMove.normalized);
             Stop();
             remainingMove = Vector3.zero;
+            collisionFeedback?.PlayFeedbacks();
         }
     }
     

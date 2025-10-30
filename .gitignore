@@ -81,3 +81,16 @@ WebGL Builds/
 WebGLBuild/
 
 Packages/com.singularitygroup.hotreload/*
+
+Assets/Feel/FeelDemos/*
+Assets/Feel/FeelDemosHDRP/*
+Assets/Feel/FeelDemosURP/*
+Assets/Feel/NiceVibrations/*
+Assets/Feel/README.txt
+Assets/Feel/LICENSE.txt
+Assets/Feel/CHANGELOG.txt
+Assets/Feel/AUTHORS.txt
+Assets/Feel/CONTRIBUTORS.txt
+Assets/Feel/CONTRIBUTING.txt
+Assets/Feel/MMFeedbacks/Demos/*
+Assets/Feel/MMTools/Demos/*
