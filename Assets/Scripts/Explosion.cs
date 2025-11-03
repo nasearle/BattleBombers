@@ -38,10 +38,6 @@ public class Explosion : NetworkBehaviour {
     }
 
     private void FixedUpdate() {
-        if (!IsServerStarted) {
-            return;
-        }
-        
         if (explosionRadius < maxExplosionRadius) {
             explosionRadius += expansionSpeed * Time.deltaTime;
             
@@ -50,13 +46,15 @@ public class Explosion : NetworkBehaviour {
             // Replace this visual with an animation that is triggered on all clients with an RPC
             explosionVisualGameObject.transform.localScale = new Vector3(scaleValue, scaleValue, scaleValue);
         }
-        
-        // Detect objects within the explosion radius
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, explosionRadius, damageableLayer);
-        foreach (var hitCollider in hitColliders) {
-            // Check if the object has a damageable component
-            if (hitCollider.TryGetComponent(out IDamageable damageable)) {
-                damageable.Damage();
+
+        if (IsServerStarted) {
+            // Detect objects within the explosion radius
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, explosionRadius, damageableLayer);
+            foreach (var hitCollider in hitColliders) {
+                // Check if the object has a damageable component
+                if (hitCollider.TryGetComponent(out IDamageable damageable)) {
+                    damageable.Damage();
+                }
             }
         }
     }

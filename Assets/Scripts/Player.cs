@@ -168,6 +168,11 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     
     [Reconcile]
     private void ReconcileState(ReconcileData data, Channel channel = Channel.Unreliable) {
+        // Let the movement replicate play through the knock back so that the reconcile doesn't skip to the server
+        // position.
+        if (_state == State.Stunned) {
+            return;
+        }
         transform.SetPositionAndRotation(data.Position, data.Rotation);
         _playerVerticalDisplacement = data.PlayerVerticalDisplacement;
         _knockbackVelocity = data.KnockbackVelocity;
