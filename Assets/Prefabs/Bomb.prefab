@@ -430,8 +430,8 @@ MonoBehaviour:
         MovementMode: 0
         AnimateScaleDuration: 0.5
         AnimatePositionSpeed: 1
-        RemapCurveZero: 0.95
-        RemapCurveOne: 1.05
+        RemapCurveZero: 0.98
+        RemapCurveOne: 1.02
         Offset: 0
         AnimateX: 1
         AnimateScaleTweenX:

@@ -237,7 +237,7 @@ MonoBehaviour:
   dropBombSpawnTransform: {fileID: 6411812991256688873}
   playerCollisionRadius: 0.5
   moveSpeed: 7
-  rotationSpeed: 10
+  rotationSpeed: 20
   gravity: 3
   knockbackForce: 7
   knockbackUpwardForce: 0.5
