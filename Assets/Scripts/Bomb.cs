@@ -44,6 +44,8 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
     private bool _isExploding;
     private bool _isGrounded;
 
+    private Player _owner;
+
     private void Awake() {
         _sphereCollider = GetComponent<SphereCollider>();
         _sphereColliderRadius = GetComponent<SphereCollider>().radius;
@@ -74,7 +76,14 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
     }
 
     private void OnDisable() {
+        _owner?.DecreaseActiveBombCount();
+        _owner = null;
         idleFeedback?.StopFeedbacks();
+    }
+
+    public override void OnStartNetwork() {
+        // Set on server when the bomb is spawned.
+        _owner?.IncreaseActiveBombCount();
     }
 
     private void Update() {
@@ -136,8 +145,8 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
         }
     }
 
-    public static void SpawnBomb(NetworkObject networkObject, Transform bombSpawnTransform) {
-        NetworkObjectManager.Instance.SpawnBomb(networkObject, bombSpawnTransform);
+    public static void SpawnBomb(NetworkObject networkObject, Transform bombSpawnTransform, Player player) {
+        NetworkObjectManager.Instance.SpawnBomb(networkObject, bombSpawnTransform, player);
     }
     
     public void Damage() {
@@ -341,6 +350,10 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
 
     public bool IsMoving() {
         return _isMovingHorizontally;
+    }
+    
+    public void SetOwner(Player player) {
+        _owner = player;
     }
     
     public void SetIgnoredPlayer(Player player, float duration) {

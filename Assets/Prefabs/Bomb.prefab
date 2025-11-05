@@ -909,7 +909,7 @@ MonoBehaviour:
   testFloorColliderCastDistance: 0.1
   bombVisualGameObject: {fileID: 3988285632059144738}
   explosionGameObject: {fileID: 423526299769384722}
-  detonationTimerMax: 555
+  detonationTimerMax: 5
   collisionFeedback: {fileID: 8487587639777356880}
   idleFeedback: {fileID: 179334012353923982}
 --- !u!114 &1961552950979316260

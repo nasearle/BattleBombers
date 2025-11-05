@@ -1,3 +1,4 @@
+using System;
 using FishNet.Object;
 using FishNet.Object.Prediction;
 using FishNet.Transporting;
@@ -37,8 +38,11 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     
     private Vector3 _knockbackVelocity;
     private float _knockbackTimer;
+    
+    private PlayerAttributes _playerAttributes;
+    private int _activeBombCount;
 
-    public enum State {
+    private enum State {
         Idle,
         Moving,
         Dropping,
@@ -48,9 +52,14 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     }
     
     private State _state;
-    
-    public struct ReplicateData : IReplicateData {
-        public Vector2 InputVector;
+
+    private void Start() {
+        _playerAttributes = new PlayerAttributes(3, 3, 1, 3);
+        _activeBombCount = 0;
+    }
+
+    private struct ReplicateData : IReplicateData {
+        public readonly Vector2 InputVector;
         
         public ReplicateData(Vector2 inputVector) : this() {
             InputVector = inputVector;
@@ -62,13 +71,13 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         public void SetTick(uint value) => _tick = value;
     }
 
-    public struct ReconcileData : IReconcileData {
-        public Vector3 Position;
-        public Quaternion Rotation;
-        public float PlayerVerticalDisplacement;
-        public Vector3 KnockbackVelocity;
-        public float KnockbackTimer;
-        public State State;
+    private struct ReconcileData : IReconcileData {
+        public readonly Vector3 Position;
+        public readonly Quaternion Rotation;
+        public readonly float PlayerVerticalDisplacement;
+        public readonly Vector3 KnockbackVelocity;
+        public readonly float KnockbackTimer;
+        public readonly State State;
         
         public ReconcileData(Vector3 position, Quaternion rotation, float playerVerticalDisplacement,
             Vector3 knockbackVelocity, float knockbackTimer, State state) : this() {
@@ -198,7 +207,11 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         
         _moveDirection = value.Get<Vector2>();
     }
-
+    
+    private bool CanSpawnBomb() {
+        return _activeBombCount < _playerAttributes.MaxBombs;
+    }
+    
     private void OnDrop(InputValue value) {
         if (!IsOwner) {
             return;
@@ -211,7 +224,11 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     private void OnDropServerRpc() {
         Bomb bomb = GetBombTouchingPlayer();
         if (bomb == null) {
-            Bomb.SpawnBomb(bombNetworkObject, dropBombSpawnTransform);
+            if (!CanSpawnBomb()) {
+                return;
+            }
+            
+            Bomb.SpawnBomb(bombNetworkObject, dropBombSpawnTransform, this);
         } else {
             if (!bomb.IsMoving()) {
                 bomb.SetIgnoredPlayer(this, bombIgnoreCollisionDuration);
@@ -241,6 +258,14 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
 
     public void Damage() {
         Debug.Log("Player damaged!");
+    }
+
+    public void IncreaseActiveBombCount() {
+        _activeBombCount++;
+    }
+    
+    public void DecreaseActiveBombCount() {
+        _activeBombCount = Mathf.Max(0, _activeBombCount - 1);
     }
     
     [ObserversRpc(RunLocally = true)]
