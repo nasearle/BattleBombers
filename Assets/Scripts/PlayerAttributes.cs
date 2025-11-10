@@ -25,13 +25,12 @@ public class PlayerAttributes {
         MaxBombs = maxBombs;
     }
 
-    // Public methods to control updates
     public void IncreaseHealth(int amount) {
-        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount); // Enforce MaxHealth limit
+        CurrentHealth = Mathf.Min(MaxHealth, CurrentHealth + amount);
     }
 
     public void DecreaseHealth(int amount) {
-        CurrentHealth = Mathf.Max(0, CurrentHealth - amount); // Enforce minimum of 0
+        CurrentHealth = Mathf.Max(0, CurrentHealth - amount);
     }
 
     public void IncreaseBombPower(int amount) {

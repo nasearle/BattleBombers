@@ -15,19 +15,21 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     [Tooltip("Degrees per second")]
     [SerializeField] private float rotationSpeed;
     [SerializeField] private float gravity;
+
+    [SerializeField] private float stunDuration;
+    [SerializeField] private float recoveryDuration;
     
-    [SerializeField] private float knockbackForce = 10f;
-    [SerializeField] private float knockbackUpwardForce = 5f;
-    [SerializeField] private float knockbackDuration = 0.5f;
-    [SerializeField] private float bombIgnoreCollisionDuration = 0.3f;
+    [SerializeField] private float knockbackForce;
+    [SerializeField] private float knockbackUpwardForce;
+    [SerializeField] private float bombIgnoreCollisionDuration;
     
     [SerializeField] private Renderer bodyRenderer;
     [SerializeField] private Material redMaterial;
+    [SerializeField] private Material yellowMaterial;
     
     private Material _defaultMaterial;
 
     private CharacterController _controller;
-    private Collider _playerCollider;
 
     private float _playerVerticalDisplacement;
     
@@ -37,7 +39,9 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     private Vector3 _lastMoveDirection;
     
     private Vector3 _knockbackVelocity;
-    private float _knockbackTimer;
+
+    private float _stunTimer;
+    private float _recoveryTimer;
     
     private PlayerAttributes _playerAttributes;
     private int _activeBombCount;
@@ -52,17 +56,42 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     }
     
     private State _state;
+    private State _previousState;
+    
+    private State CurrentState {
+        get => _state;
+        set {
+            if (_state != value) {
+                _previousState = _state;
+                _state = value;
+                OnStateChanged(_previousState, _state);
+            }
+        }
+    }
+
+    private void OnStateChanged(State oldState, State newState) {
+        // Initialize timers when entering states
+        if (newState == State.Recovering) {
+            _recoveryTimer = recoveryDuration;
+        } else if (newState == State.Stunned) {
+            _stunTimer = stunDuration;
+        }
+        
+        UpdatePlayerMaterial();
+    }
 
     private void Start() {
-        _playerAttributes = new PlayerAttributes(3, 3, 1, 3);
+        _playerAttributes = new PlayerAttributes(3, 3, 1, 20);
         _activeBombCount = 0;
     }
 
     private struct ReplicateData : IReplicateData {
         public readonly Vector2 InputVector;
+        public readonly uint Tick;
         
-        public ReplicateData(Vector2 inputVector) : this() {
+        public ReplicateData(Vector2 inputVector, uint tick) : this() {
             InputVector = inputVector;
+            Tick = tick;
         }
         
         private uint _tick;
@@ -77,15 +106,18 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         public readonly float PlayerVerticalDisplacement;
         public readonly Vector3 KnockbackVelocity;
         public readonly float KnockbackTimer;
+        public readonly float StunTimer;
+        public readonly float RecoveryTimer;
         public readonly State State;
         
         public ReconcileData(Vector3 position, Quaternion rotation, float playerVerticalDisplacement,
-            Vector3 knockbackVelocity, float knockbackTimer, State state) : this() {
+            Vector3 knockbackVelocity, float stunTimer, float recoveryTimer, State state) : this() {
             Position = position;
             Rotation = rotation;
             PlayerVerticalDisplacement = playerVerticalDisplacement;
             KnockbackVelocity = knockbackVelocity;
-            KnockbackTimer = knockbackTimer;
+            StunTimer = stunTimer;
+            RecoveryTimer = recoveryTimer;
             State = state;
         }
         
@@ -97,7 +129,6 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     
     public override void OnStartNetwork() {
         _controller = GetComponent<CharacterController>();
-        _playerCollider = _controller;
         
         if (bodyRenderer != null) {
             _defaultMaterial = bodyRenderer.material;
@@ -114,8 +145,44 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     }
     
     private void TimeManager_OnTick() {
-        HandleMovementReplicate(CreateReplicateData());
+        HandleReplicate(CreateReplicateData());
         CreateReconcile();
+    }
+    
+    private void HandleState() {
+        switch (_state) {
+            case State.Idle:
+                break;
+            case State.Stunned:
+                _stunTimer -= (float)TimeManager.TickDelta;
+                if (_stunTimer <= 0f) {
+                    CurrentState = State.Recovering;
+                }
+                break;
+            case State.Recovering:
+                _recoveryTimer -= (float)TimeManager.TickDelta;
+                if (_recoveryTimer <= 0f) {
+                    CurrentState = State.Idle;
+                }
+                break;
+        }
+    }
+    
+    private void UpdatePlayerMaterial() {
+        if (bodyRenderer == null) return;
+        
+        switch (_state) {
+            case State.Stunned:
+                bodyRenderer.material = redMaterial;
+                break;
+            case State.Recovering:
+                bodyRenderer.material = yellowMaterial;
+                break;
+            case State.Idle:
+            default:
+                bodyRenderer.material = _defaultMaterial;
+                break;
+        }
     }
     
     private ReplicateData CreateReplicateData() {
@@ -123,12 +190,15 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
             return default;
         }
         
-        return new ReplicateData(_moveDirection);
+        return new ReplicateData(_moveDirection, TimeManager.LocalTick);
     }
 
     [Replicate]
-    private void HandleMovementReplicate(ReplicateData data, ReplicateState state = ReplicateState.Invalid,
+    private void HandleReplicate(ReplicateData data, ReplicateState state = ReplicateState.Invalid,
         Channel channel = Channel.Unreliable) {
+        if (!state.ContainsReplayed()) {
+            HandleState();
+        }
 
         Vector3 moveDir = new Vector3(data.InputVector.x, 0, data.InputVector.y);
         
@@ -146,19 +216,12 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         Vector3 gravitationalMovement = new Vector3(0, _playerVerticalDisplacement, 0);
 
         Vector3 horizontalMovement = new Vector3();
-        // Handle knockback
-        if (_knockbackTimer > 0f) {
-            _knockbackTimer -= (float)TimeManager.TickDelta;
+
+        if (_state == State.Stunned) {
             horizontalMovement = _knockbackVelocity * (float)TimeManager.TickDelta;
             
             // Decay knockback velocity over time
-            _knockbackVelocity = Vector3.Lerp(_knockbackVelocity, Vector3.zero, (float)TimeManager.TickDelta / knockbackDuration);
-            
-            if (_knockbackTimer <= 0f) {
-                _state = State.Idle;
-                _knockbackVelocity = Vector3.zero;
-                UpdatePlayerMaterial();
-            }
+            _knockbackVelocity = Vector3.Lerp(_knockbackVelocity, Vector3.zero, (float)TimeManager.TickDelta / stunDuration);
         } else if (moveDir != Vector3.zero) {
             _lastMoveDirection = moveDir;
             transform.forward = Vector3.Slerp(transform.forward, moveDir, rotationSpeed * (float)TimeManager.TickDelta);
@@ -171,22 +234,19 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     public override void CreateReconcile() {
         transform.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
         ReconcileData data = new ReconcileData(position, rotation, _playerVerticalDisplacement, 
-            _knockbackVelocity, _knockbackTimer, _state);
+            _knockbackVelocity, _stunTimer, _recoveryTimer, _state);
         ReconcileState(data);
     }
     
     [Reconcile]
     private void ReconcileState(ReconcileData data, Channel channel = Channel.Unreliable) {
-        // Let the movement replicate play through the knock back so that the reconcile doesn't skip to the server
-        // position.
-        if (_state == State.Stunned) {
-            return;
-        }
         transform.SetPositionAndRotation(data.Position, data.Rotation);
         _playerVerticalDisplacement = data.PlayerVerticalDisplacement;
         _knockbackVelocity = data.KnockbackVelocity;
-        _knockbackTimer = data.KnockbackTimer;
-        _state = data.State;
+        _stunTimer = data.StunTimer;
+        _recoveryTimer = data.RecoveryTimer;
+        
+        CurrentState = data.State;
     }
 
     private Bomb GetBombTouchingPlayer() {
@@ -253,11 +313,21 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     }
 
     public void Knock(Vector3 direction) {
+        if (_state == State.Recovering) {
+            return;
+        }
+        
         KnockClientRpc(direction);
     }
 
     public void Damage() {
-        Debug.Log("Player damaged!");
+        if (_state == State.Recovering) {
+            return;
+        }
+        
+        _playerAttributes.DecreaseHealth(1);
+
+        CurrentState = State.Recovering;
     }
 
     public void IncreaseActiveBombCount() {
@@ -270,27 +340,9 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     
     [ObserversRpc(RunLocally = true)]
     private void KnockClientRpc(Vector3 direction) {
-        if (_state != State.Stunned) {
-            _state = State.Stunned;
-            _knockbackVelocity = direction.normalized * knockbackForce;
-            _knockbackTimer = knockbackDuration;
-            _playerVerticalDisplacement = knockbackUpwardForce;
-            UpdatePlayerMaterial();
-        }
-    }
-    
-    private void UpdatePlayerMaterial() {
-        if (bodyRenderer == null) return;
-        
-        switch (_state) {
-            case State.Stunned:
-                bodyRenderer.material = redMaterial;
-                break;
-            case State.Idle:
-            default:
-                bodyRenderer.material = _defaultMaterial;
-                break;
-        }
+        CurrentState = State.Stunned;
+        _knockbackVelocity = direction.normalized * knockbackForce;
+        _playerVerticalDisplacement = knockbackUpwardForce;
     }
     
     public CharacterController GetCharacterController() {

@@ -250,6 +250,8 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
 
     private void HandleKnockableCollision(RaycastHit hit, IKnockable knockable, Vector3 direction, ref Vector3 remainingMove) {
         Vector3 hitPointRelativeToBomb = transform.InverseTransformPoint(hit.point);
+        // If the bomb is falling and the hit point is below the center of the bomb (plus a small threshold distance),
+        // then bounce it.
         if (!_isGrounded && hitPointRelativeToBomb.y <= bounceThreshold) {
             _verticalVelocity = new Vector3(0, bounceVelocity, 0);
             Vector3 bounceDirection = new Vector3(remainingMove.x, bounceVelocity, remainingMove.z).normalized;
@@ -258,6 +260,8 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
             knockable.Knock(remainingMove.normalized);
             float distance = Vector3.Distance(transform.position, knockable.gameObject.transform.position);
             float thisRadius = _sphereColliderRadius;
+            
+            // Check if bombs are overlapping and move bomb back if so
             if (knockable.gameObject.TryGetComponent<Collider>(out Collider knockableCollider)) {
                 if (knockableCollider is SphereCollider sphere) {
                     float knockableRadius = sphere.radius;
@@ -269,6 +273,7 @@ public class Bomb : NetworkBehaviour, IKnockable, IDamageable {
                     }
                 }
             }
+            
             Stop();
             remainingMove = Vector3.zero;
             PlayCollisionFeedbackClientRpc();
