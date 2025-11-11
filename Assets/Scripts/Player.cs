@@ -17,6 +17,11 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
     [SerializeField] private float gravity;
 
     [SerializeField] private float stunDuration;
+    [SerializeField] private float inputStunReductionPercent;
+    [SerializeField] private Transform visualTransform;
+    [SerializeField] private float maxLeanAngle;
+    [SerializeField] private float leanSpeed;
+    
     [SerializeField] private float recoveryDuration;
     
     [SerializeField] private float knockbackForce;
@@ -144,6 +149,33 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         TimeManager.OnTick -= TimeManager_OnTick;
     }
     
+    private void UpdateLean() {
+        if (_state != State.Stunned || visualTransform == null) {
+            // Reset lean when not stunned
+            if (visualTransform != null) {
+                visualTransform.localRotation = Quaternion.Slerp(visualTransform.localRotation, Quaternion.identity, leanSpeed * Time.deltaTime);
+            }
+            return;
+        }
+    
+        // Use the current input direction (this works for owner)
+        Vector3 moveDir = new Vector3(_moveDirection.x, 0, _moveDirection.y);
+    
+        if (moveDir != Vector3.zero) {
+            float targetLeanX = -moveDir.z * maxLeanAngle;
+            float targetLeanZ = moveDir.x * maxLeanAngle;
+            Quaternion targetLeanRotation = Quaternion.Euler(targetLeanX, 0, targetLeanZ);
+            visualTransform.localRotation = Quaternion.Slerp(visualTransform.localRotation, targetLeanRotation, leanSpeed * Time.deltaTime);
+        } else {
+            visualTransform.localRotation = Quaternion.Slerp(visualTransform.localRotation, Quaternion.identity, leanSpeed * Time.deltaTime);
+        }
+    }
+
+    // Add this method
+    private void Update() {
+        UpdateLean();
+    }
+    
     private void TimeManager_OnTick() {
         HandleReplicate(CreateReplicateData());
         CreateReconcile();
@@ -220,8 +252,14 @@ public class Player : NetworkBehaviour, IKnockable, IDamageable {
         if (_state == State.Stunned) {
             horizontalMovement = _knockbackVelocity * (float)TimeManager.TickDelta;
             
-            // Decay knockback velocity over time
-            _knockbackVelocity = Vector3.Lerp(_knockbackVelocity, Vector3.zero, (float)TimeManager.TickDelta / stunDuration);
+            float knockbackDecayRate = 10f;
+            _knockbackVelocity = Vector3.MoveTowards(_knockbackVelocity, Vector3.zero, knockbackDecayRate * (float)TimeManager.TickDelta);
+
+            // If player is trying to move while stunned, reduce the stunTimer by a fixed percentage of the stunDuration
+            if (moveDir != Vector3.zero) {
+                float reduction = stunDuration * inputStunReductionPercent;
+                _stunTimer = Mathf.Max(0f, _stunTimer - reduction);
+            }
         } else if (moveDir != Vector3.zero) {
             _lastMoveDirection = moveDir;
             transform.forward = Vector3.Slerp(transform.forward, moveDir, rotationSpeed * (float)TimeManager.TickDelta);

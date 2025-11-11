@@ -49,7 +49,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 1961552950979316260}
   _networkObjectCache: {fileID: 1961552950979316260}
   explosionRadius: 0
-  maxExplosionRadius: 4
+  maxExplosionRadius: 3
   expansionSpeed: 18
   durationMax: 1
   damageableLayer:

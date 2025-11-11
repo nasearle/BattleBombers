@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 275565816107150217}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.584, z: 0.344}
+  m_LocalPosition: {x: 0, y: 1.084, z: 0.344}
   m_LocalScale: {x: 0.59234, y: 0.20376575, z: 0.28343}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -112,7 +112,7 @@ Transform:
   m_GameObject: {fileID: 1087168155576811425}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -239,7 +239,11 @@ MonoBehaviour:
   moveSpeed: 7
   rotationSpeed: 20
   gravity: 3
-  stunDuration: 0.5
+  stunDuration: 10
+  inputStunReductionPercent: 0.01
+  visualTransform: {fileID: 2684082589246674198}
+  maxLeanAngle: 15
+  leanSpeed: 50
   recoveryDuration: 2
   knockbackForce: 7
   knockbackUpwardForce: 0.5
@@ -358,7 +362,7 @@ Transform:
   m_GameObject: {fileID: 7159870517789719344}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
